@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 // Base API endpoints from the OSRS GE API.
-const FIVE_MIN_URL: &str = "https://prices.runescape.wiki/api/v1/osrs/1h";
+const FIVE_MIN_URL: &str = "https://prices.runescape.wiki/api/v1/osrs/5m";
 const MAPPING_URL: &str = "https://prices.runescape.wiki/api/v1/osrs/mapping";
 
 /// Represents pricing data for an individual item.
