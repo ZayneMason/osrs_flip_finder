@@ -1,0 +1,520 @@
+<div class="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+  <div class="max-w-7xl mx-auto p-6">
+    <!-- View Controls -->
+    <div class="flex flex-wrap gap-4 mb-6 p-4 bg-gray-800 rounded-lg shadow-lg">
+      <div class="flex gap-2">
+        <button
+          (click)="setView('opportunities')"
+          [class.bg-purple-500]="viewMode === 'opportunities'"
+          [class.bg-gray-700]="viewMode !== 'opportunities'"
+          class="px-4 py-2 rounded-lg transition-all duration-200 hover:bg-purple-600"
+        >
+          Opportunities
+        </button>
+        <button
+          (click)="setView('table')"
+          [class.bg-purple-500]="viewMode === 'table'"
+          [class.bg-gray-700]="viewMode !== 'table'"
+          class="px-4 py-2 rounded-lg transition-all duration-200 hover:bg-purple-600"
+        >
+          All Items
+        </button>
+        <button
+          (click)="setView('cards')"
+          [class.bg-purple-500]="viewMode === 'cards'"
+          [class.bg-gray-700]="viewMode !== 'cards'"
+          class="px-4 py-2 rounded-lg transition-all duration-200 hover:bg-purple-600"
+        >
+          Cards View
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-wrap gap-4">
+        <!-- Members Filter -->
+        <div class="flex gap-2">
+          <button
+            (click)="toggleMembersFilter('members')"
+            [class.bg-purple-500]="membersFilter === 'members'"
+            [class.bg-gray-700]="membersFilter !== 'members'"
+            class="px-4 py-2 rounded-lg transition-all duration-200 hover:bg-purple-600"
+          >
+            Members
+          </button>
+          <button
+            (click)="toggleMembersFilter('f2p')"
+            [class.bg-purple-500]="membersFilter === 'f2p'"
+            [class.bg-gray-700]="membersFilter !== 'f2p'"
+            class="px-4 py-2 rounded-lg transition-all duration-200 hover:bg-purple-600"
+          >
+            F2P
+          </button>
+        </div>
+
+        <!-- Search -->
+        <div class="flex-grow">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="Search items..."
+            class="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+          />
+        </div>
+
+        <!-- Timestamp -->
+        <div
+          class="text-sm text-gray-400 self-center flex items-center gap-2"
+          *ngIf="timestamp"
+        >
+          <span>Last Updated: {{ getRelativeTime() }}</span>
+          <span class="text-gray-600">|</span>
+          <span class="text-gray-500">{{ getFormattedTime(lastUpdated) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="!items && !error" class="text-center py-12">
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mb-4"
+      ></div>
+      <p class="text-gray-400">Loading market data...</p>
+    </div>
+
+    <!-- Error State -->
+    <div
+      *ngIf="error"
+      class="text-red-500 py-4 text-center bg-red-900/20 rounded-lg"
+    >
+      {{ error }}
+    </div>
+
+    <!-- Opportunities View -->
+    <div
+      *ngIf="viewMode === 'opportunities' && items"
+      class="bg-gray-800 rounded-lg p-4 mb-6"
+    >
+      <!-- Trading Configuration -->
+      <div
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 p-4 bg-gray-700/50 rounded-lg"
+      >
+        <div class="flex flex-col">
+          <label class="text-gray-400 text-sm">Min Volume</label>
+          <input
+            type="number"
+            [(ngModel)]="filterCriteria.minVolume"
+            (input)="filterOpportunities()"
+            class="bg-gray-700 rounded px-2 py-1 text-white"
+          />
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-gray-400 text-sm">Min ROI %</label>
+          <input
+            type="number"
+            [(ngModel)]="filterCriteria.minROI"
+            (input)="filterOpportunities()"
+            class="bg-gray-700 rounded px-2 py-1 text-white"
+          />
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-gray-400 text-sm">Min Profit/Item</label>
+          <input
+            type="number"
+            [(ngModel)]="filterCriteria.minProfitPerItem"
+            (input)="filterOpportunities()"
+            class="bg-gray-700 rounded px-2 py-1 text-white"
+          />
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-gray-400 text-sm">Max Investment</label>
+          <input
+            type="number"
+            [(ngModel)]="filterCriteria.maxInvestment"
+            (input)="filterOpportunities()"
+            class="bg-gray-700 rounded px-2 py-1 text-white"
+          />
+        </div>
+
+        <div class="flex items-end">
+          <button
+            class="w-full px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 transition-colors"
+            (click)="filterOpportunities()"
+          >
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- Opportunities Table -->
+      <div class="overflow-x-auto">
+        <div *ngIf="loading" class="text-center py-4">
+          <div
+            class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"
+          ></div>
+          <p class="text-gray-400">Filtering opportunities...</p>
+        </div>
+        <table *ngIf="!loading" class="w-full">
+          <thead>
+            <tr class="text-left text-gray-400 border-b border-gray-700">
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('name')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Item
+                  <span *ngIf="sortTradeField === 'name'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('buyPrice')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Buy
+                  <span *ngIf="sortTradeField === 'buyPrice'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('sellPrice')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Sell
+                  <span *ngIf="sortTradeField === 'sellPrice'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('profitPerItem')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Profit/Item
+                  <span *ngIf="sortTradeField === 'profitPerItem'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('roi')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  ROI
+                  <span *ngIf="sortTradeField === 'roi'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('volume')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Volume
+                  <span *ngIf="sortTradeField === 'volume'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('buyLimit')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Limit
+                  <span *ngIf="sortTradeField === 'buyLimit'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('totalPotentialProfit')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Total Profit
+                  <span *ngIf="sortTradeField === 'totalPotentialProfit'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('confidence')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Confidence
+                  <span *ngIf="sortTradeField === 'confidence'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+              <th class="p-3">
+                <button
+                  (click)="handleTradeSort('confidenceToProfit')"
+                  class="flex items-center gap-1 hover:text-purple-500"
+                >
+                  Profit to Confidence
+                  <span *ngIf="sortTradeField === 'confidenceToProfit'">{{
+                    sortDirection === "asc" ? "↑" : "↓"
+                  }}</span>
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let opp of filteredOpportunities"
+              class="border-b border-gray-700 hover:bg-gray-700/50 cursor-pointer"
+              (click)="navigateToItem(opp.itemId, $event)"
+            >
+              <td class="p-3">
+                <div class="flex items-center gap-2">
+                  <img
+                    [src]="opp.icon"
+                    [alt]="opp.name"
+                    class="w-8 h-8 object-contain bg-gray-700 rounded p-1"
+                    (error)="handleImageError($event)"
+                  />
+                  <span class="hover:text-purple-500">{{ opp.name }}</span>
+                </div>
+              </td>
+              <td class="p-3">{{ opp.buyPrice | number }}</td>
+              <td class="p-3">{{ opp.sellPrice | number }}</td>
+              <td class="p-3 text-green-500">
+                {{ opp.profitPerItem | number }}
+              </td>
+              <td class="p-3" [class.text-green-500]="opp.roi > 5">
+                {{ opp.roi | number : "1.1-1" }}%
+              </td>
+              <td class="p-3">{{ opp.volume | number }}</td>
+              <td class="p-3">{{ opp.buyLimit | number }}</td>
+              <td class="p-3 text-green-500">
+                {{ opp.totalPotentialProfit | number }}
+              </td>
+              <td class="p-3">
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                  <div
+                    class="bg-green-500 h-2 rounded-full"
+                    [style.width.%]="opp.confidence * 100"
+                  ></div>
+                </div>
+              </td>
+              <td class="p-3">{{ opp.confidenceToProfit | number }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Table View -->
+    <div
+      *ngIf="viewMode === 'table' && items"
+      class="bg-gray-800 rounded-lg shadow-lg overflow-hidden"
+    >
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-gray-700 text-left">
+              <th
+                *ngFor="let col of columns"
+                class="p-4 font-medium border-b border-gray-600"
+              >
+                <button
+                  class="flex items-center gap-2 hover:text-purple-500 transition-colors"
+                  (click)="handleSort(col.field)"
+                >
+                  {{ col.name }}
+                  <span
+                    class="inline-block w-4"
+                    *ngIf="sortField === col.field"
+                  >
+                    {{ sortDirection === "asc" ? "↑" : "↓" }}
+                  </span>
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let item of filteredItems"
+              class="hover:bg-gray-700/50 transition-colors cursor-pointer"
+              (click)="navigateToItem(item.itemId, $event)"
+            >
+              <td class="p-4 border-b border-gray-600">
+                <div class="flex items-center gap-3">
+                  <img
+                    [src]="getItemIconUrl(item)"
+                    [alt]="item.details?.name"
+                    class="w-8 h-8 object-contain bg-gray-700 rounded p-1"
+                    (error)="handleImageError($event)"
+                  />
+                  <div class="flex flex-col">
+                    <span class="font-medium text-purple-500">
+                      {{ item.details?.name || item.itemId }}
+                    </span>
+                    <div class="flex gap-2">
+                      <span
+                        *ngIf="item.details?.members"
+                        class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded"
+                      >
+                        P2P
+                      </span>
+                      <span
+                        class="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded"
+                      >
+                        Limit: {{ item.details?.limit | number }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="p-4 border-b border-gray-600">
+                {{ item.avgHighPrice | number }}
+              </td>
+              <td class="p-4 border-b border-gray-600">
+                {{ item.avgLowPrice | number }}
+              </td>
+              <td class="p-4 border-b border-gray-600">
+                <span
+                  [class.text-green-500]="item.margin > 0"
+                  [class.text-red-500]="item.margin < 0"
+                >
+                  {{ item.margin | number }}
+                </span>
+              </td>
+              <td class="p-4 border-b border-gray-600">
+                <div class="flex flex-col">
+                  <span
+                    [class.text-green-500]="item.marginPercent > 0"
+                    [class.text-red-500]="item.marginPercent < 0"
+                  >
+                    {{ item.marginPercent | number : "1.2-2" }}%
+                  </span>
+                  <span class="text-xs text-gray-400">
+                    Vol:
+                    {{ item.highPriceVolume + item.lowPriceVolume | number }}
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cards View -->
+    <div
+      *ngIf="viewMode === 'cards' && items"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    >
+      <div
+        *ngFor="let item of filteredItems"
+        class="bg-gray-800 rounded-lg shadow-lg p-6 hover:bg-gray-700/50 transition-all duration-200 cursor-pointer transform hover:-translate y-1"
+        (click)="navigateToItem(item.itemId, $event)"
+      >
+        <!-- Card Header -->
+        <div class="flex items-center gap-4 mb-4">
+          <img
+            [src]="getItemIconUrl(item)"
+            [alt]="item.details?.name"
+            class="w-12 h-12 object-contain bg-gray-700 rounded p-2"
+            (error)="handleImageError($event)"
+          />
+          <div>
+            <h2 class="font-semibold text-lg text-purple-500">
+              {{ item.details?.name }}
+            </h2>
+            <div class="flex gap-2 mt-1">
+              <span
+                *ngIf="item.details?.members"
+                class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded"
+              >
+                P2P
+              </span>
+              <span
+                class="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded"
+              >
+                Limit: {{ item.details?.limit | number }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Content -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">High:</span>
+            <span>{{ item.avgHighPrice | number }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Low:</span>
+            <span>{{ item.avgLowPrice | number }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Margin:</span>
+            <span
+              [class.text-green-500]="item.margin > 0"
+              [class.text-red-500]="item.margin < 0"
+            >
+              {{ item.margin | number }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Margin %:</span>
+            <span
+              [class.text-green-500]="item.marginPercent > 0"
+              [class.text-red-500]="item.marginPercent < 0"
+            >
+              {{ item.marginPercent | number : "1.2-2" }}%
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Volume:</span>
+            <span>{{
+              item.highPriceVolume + item.lowPriceVolume | number
+            }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">High Alch:</span>
+            <span>{{ item.details?.highalch | number }}</span>
+          </div>
+        </div>
+
+        <!-- Trading Info -->
+        <div class="mt-4 pt-4 border-t border-gray-700">
+          <div class="flex flex-col gap-2">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-400">Trade Confidence:</span>
+              <div class="flex items-center gap-2">
+                <div class="w-16 bg-gray-700 rounded-full h-1.5">
+                  <div
+                    class="bg-green-500 h-1.5 rounded-full"
+                    [style.width.%]="item.details?.limit ? 100 : 0"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-gray-400">
+              {{
+                getVolumeAnalysis(
+                  item.highPriceVolume + item.lowPriceVolume,
+                  item.details?.limit || 0
+                )
+              }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
