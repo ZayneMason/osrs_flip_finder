@@ -62,7 +62,7 @@
               "buildTarget": "osrs_algotrading:build:development"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "production"
         }
       }
     }
