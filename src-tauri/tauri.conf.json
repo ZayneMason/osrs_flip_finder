@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "osrs_flip_finder",
+  "productName": "OSRSFlipFinder",
   "version": "0.1.0",
-  "identifier": "com.osrs_flip_finder.app",
+  "identifier": "com.OSRSFlipFinder.app",
   "build": {
     "beforeDevCommand": "npm run start",
     "devUrl": "http://localhost:1420",
