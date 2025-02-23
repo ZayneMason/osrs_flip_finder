@@ -7,7 +7,7 @@
     "beforeDevCommand": "npm run start",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
-    "frontendDist": "../dist/osrs_flip_finder/browser"
+    "frontendDist": "../dist/osrs_algotrading/browser"
   },
   "app": {
     "windows": [
