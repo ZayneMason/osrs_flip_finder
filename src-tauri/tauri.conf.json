@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "osrs_algotrading",
+        "title": "osrs_flip_finder",
         "width": 800,
         "height": 600
       }
